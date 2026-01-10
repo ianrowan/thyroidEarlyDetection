@@ -83,6 +83,17 @@ venv/bin/python src/feature_extraction.py
 
 # Generate labeling visualization
 venv/bin/python src/visualize_for_labeling.py
+
+# Train models (requires data/labels.csv)
+venv/bin/python -m src.train --model random_forest
+venv/bin/python -m src.train --model xgboost
+venv/bin/python -m src.train --model all  # run all baselines
+
+# With semi-supervised learning
+venv/bin/python -m src.train --model xgboost --semi-supervised
+
+# View experiment results
+venv/bin/mlflow ui
 ```
 
 ## Architecture
