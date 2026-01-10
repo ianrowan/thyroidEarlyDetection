@@ -102,7 +102,116 @@ venv/bin/mlflow ui
 
 ## Architecture
 
-*To be documented as the codebase is built.*
+### Directory Structure
+```
+thyroid-ml/
+├── data/
+│   ├── apple_health_export/    # Raw Apple Health XML (2.8GB, gitignored)
+│   │   └── export.xml
+│   ├── processed/              # Parsed parquet files (gitignored)
+│   │   ├── resting_heart_rate.parquet
+│   │   ├── heart_rate.parquet
+│   │   ├── hrv_sdnn.parquet
+│   │   ├── respiratory_rate.parquet
+│   │   ├── sleep.parquet
+│   │   └── steps.parquet
+│   ├── features.parquet        # 5-day window features (691 windows, 63 features)
+│   ├── labels.csv              # User-provided episode labels (TODO)
+│   ├── labels_template.csv     # Template for labeling format
+│   ├── results.csv             # Lab results (TSH, T3, T4)
+│   └── medication_history.csv  # Medication dosage changes
+├── src/
+│   ├── parse_health_export.py  # Streaming XML parser for Apple Health
+│   ├── feature_extraction.py   # 5-day window feature aggregation
+│   ├── visualize_for_labeling.py # Interactive Plotly visualization
+│   ├── config.py               # Dataclass configs for experiments
+│   ├── dataset.py              # Label loading, temporal splits, sequences
+│   ├── models.py               # RandomForest, XGBoost, SemiSupervised
+│   ├── sequence_models.py      # LSTM/GRU PyTorch models
+│   ├── train.py                # Classical ML training with MLflow
+│   └── train_sequence.py       # Sequence model training
+├── outputs/
+│   └── labeling_viz.html       # Interactive chart for labeling
+├── mlruns/                     # MLflow experiment tracking (gitignored)
+├── models/                     # Saved model artifacts (gitignored)
+├── research.md                 # Research phase documentation
+├── requirements.txt            # Python dependencies
+└── venv/                       # Virtual environment (gitignored)
+```
+
+### Data Pipeline Flow
+```
+Apple Health XML (2.8GB)
+    │
+    ▼ parse_health_export.py (streaming, ~2min)
+Parquet files per signal type
+    │
+    ▼ feature_extraction.py
+5-day window features (features.parquet)
+    │
+    ├──▶ visualize_for_labeling.py → labeling_viz.html
+    │
+    ▼ + labels.csv
+Training data (temporal split)
+    │
+    ├──▶ train.py (RF, XGBoost, Semi-supervised)
+    └──▶ train_sequence.py (LSTM, GRU)
+           │
+           ▼
+      MLflow metrics + artifacts
+```
+
+### Key Data Characteristics
+- **Date range**: 2016-2026 (~9.5 years)
+- **Primary signals**: RHR (2881), respiratory rate (62604), sleep (59741), HRV (19235)
+- **Device transition**: Apple Watch → Whoop in July 2025
+- **HRV gap**: Whoop not writing HRV to Apple Health (ends Nov 2025)
+- **Lab results**: 5 from recent episode (Aug 2025 - Jan 2026), 1 from Oct 2022
+
+### Feature Engineering (63 features per 5-day window)
+- **Per signal**: mean, median, std, min, max, p5, p95, iqr, cv, count, trend
+- **RHR specific**: deviation from 14-day baseline, deviation from 30-day baseline, delta
+- **Sleep specific**: total minutes, deep/rem/core/awake, efficiency, session count
+- **Derived**: respiratory rate delta, source flags (Apple Watch vs Whoop)
+
+### Model Approaches
+| Approach | Module | Description |
+|----------|--------|-------------|
+| A: Baseline | models.py | RandomForest, XGBoost on window features |
+| B: Sequence | sequence_models.py | LSTM/GRU on sequences of windows |
+| C: Semi-supervised | models.py | Self-training with unlabeled data |
+| D: Anomaly | (planned) | Autoencoder on normal periods |
+
+### Prediction Targets
+- **State** (ordinal): normal=0, mild=1, moderate=2, severe=3
+- **Trend**: improving=0, stable=1, worsening=2
+- **Cadence**: Every 5 days
+
+### Evaluation Strategy
+- **Track 1**: Train on old data, test on recent 9-month episode
+- **Track 2**: Train on all including recent, test on older episode
+- **Metrics**: balanced accuracy, ordinal accuracy, F1, worsening recall
+
+### Key Module APIs
+
+**dataset.py**:
+- `prepare_dataset(data_config, train_config)` → DataFrame with labels, feature_cols
+- `temporal_train_test_split(df, cols, test_date, for_sequences=False)` → dict with X/y splits
+
+**models.py**:
+- `get_model(name, params)` → BaseModel (RandomForest or XGBoost)
+- `model.fit(X, y_state, y_trend)` / `model.predict(X)` / `model.predict_proba(X)`
+- `SemiSupervisedWrapper(base_model, threshold, max_iter)` → wraps any BaseModel
+
+**sequence_models.py**:
+- `SequenceModelWrapper(model_type='lstm'|'gru', hidden_size, ...)`
+- Same fit/predict interface, handles preprocessing internally
+
+### Current Phase Status
+- [x] Phase 1: Research - Complete (research.md)
+- [~] Phase 2: Implementation - Data pipeline done, awaiting labels
+- [ ] Phase 3: Experimentation - Ready to run when labels available
+- [ ] Phase 4: Productionization - After best model selected
 
 ## Requests of user
 
