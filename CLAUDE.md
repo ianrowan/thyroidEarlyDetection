@@ -74,7 +74,16 @@ Hardware Access
 
 ## Development Commands
 
-*To be added as the project develops.*
+```bash
+# Parse Apple Health export (run once after new export)
+venv/bin/python src/parse_health_export.py
+
+# Extract features into 5-day windows
+venv/bin/python src/feature_extraction.py
+
+# Generate labeling visualization
+venv/bin/python src/visualize_for_labeling.py
+```
 
 ## Architecture
 
@@ -84,7 +93,10 @@ Hardware Access
 
 *Use this section to request dataset, etc from the user, use it like a checklist and checkoff once you receive data*
 
-[ ] Apple Health export (full XML from iPhone Health app → Profile → Export All Health Data)
-[ ] Labeling session: date ranges + severity (Normal/Mild/Moderate/Severe) for remembered hyperthyroid episodes
-[ ] Lab results with dates (TSH, T3, T4 values for the 6 known lab draws)
-[ ] Medication history with dates (optional, for validation/context)
+- [x] Apple Health export (full XML from iPhone Health app → Profile → Export All Health Data)
+- [ ] Labeling session: date ranges + severity (Normal/Mild/Moderate/Severe) for remembered hyperthyroid episodes
+- [x] Lab results with dates (TSH, T3, T4 values for the 6 known lab draws)
+- [x] Medication history with dates (optional, for validation/context)
+
+### Data Flags
+- HRV data ends Nov 2025 - Whoop may not be writing HRV to Apple Health (verify or export from Whoop directly)

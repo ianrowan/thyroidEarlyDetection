@@ -1,4 +1,22 @@
-
 # FewWord context plugin
 .fewword/scratch/
 .fewword/index/
+
+# Data and outputs (large files)
+data/
+outputs/
+models/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.eggs/
+
+# MLflow
+mlruns/
+
+# IDE
+.vscode/
+.idea/
