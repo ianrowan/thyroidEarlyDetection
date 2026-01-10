@@ -456,11 +456,72 @@ class HybridDualModel(BaseModel):
         return dict(sorted(importance.items(), key=lambda x: x[1], reverse=True))
 
 
+class EarlyDetectionModel(BaseModel):
+    RHR_DELTA_FEATURES = ['rhr_deviation_14d', 'rhr_deviation_30d', 'rhr_delta']
+
+    def __init__(self, params: Dict[str, Any] = None):
+        default_params = {
+            'threshold': 0.35,
+            'xgb_params': {
+                'max_depth': 3,
+                'learning_rate': 0.1,
+                'n_estimators': 100,
+                'random_state': 42,
+                'eval_metric': 'logloss'
+            }
+        }
+        if params:
+            if 'xgb_params' in params:
+                default_params['xgb_params'].update(params.pop('xgb_params'))
+            default_params.update(params)
+        super().__init__(default_params)
+        self.model = None
+        self.feature_indices = None
+        self.feature_names = None
+
+    def set_feature_names(self, feature_names: list):
+        self.feature_names = feature_names
+        self.feature_indices = [feature_names.index(f) for f in self.RHR_DELTA_FEATURES if f in feature_names]
+
+    def fit(self, X: np.ndarray, y_state: np.ndarray, y_trend: np.ndarray = None, feature_names: list = None):
+        if feature_names is not None:
+            self.set_feature_names(feature_names)
+
+        if self.feature_indices is None:
+            raise ValueError("Must call set_feature_names() or pass feature_names before fit()")
+
+        X_rhr = np.nan_to_num(X[:, self.feature_indices], nan=0)
+        y_binary = (y_state >= 1).astype(int)
+
+        self.model = xgb.XGBClassifier(**self.params['xgb_params'])
+        self.model.fit(X_rhr, y_binary)
+
+        return self
+
+    def predict(self, X: np.ndarray) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+        probs = self.predict_proba(X)[0][:, 1]
+        predictions = (probs >= self.params['threshold']).astype(int)
+        return predictions, None
+
+    def predict_proba(self, X: np.ndarray) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+        X_rhr = np.nan_to_num(X[:, self.feature_indices], nan=0)
+        proba = self.model.predict_proba(X_rhr)
+        return proba, None
+
+    def get_risk_score(self, X: np.ndarray) -> np.ndarray:
+        return self.predict_proba(X)[0][:, 1]
+
+    def get_feature_importance(self, feature_names: list = None) -> Dict[str, float]:
+        names = [self.feature_names[i] for i in self.feature_indices]
+        return dict(zip(names, self.model.feature_importances_))
+
+
 MODEL_REGISTRY = {
     'random_forest': RandomForestModel,
     'xgboost': XGBoostModel,
     'mlp': MLPModel,
     'hybrid': HybridDualModel,
+    'early_detection': EarlyDetectionModel,
 }
 
 def get_model(name: str, params: Dict[str, Any] = None) -> BaseModel:
