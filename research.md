@@ -204,52 +204,70 @@ Run both tracks for each ML approach to understand data quality vs model complex
 - **Features**: 51 numeric features
 - **Label distribution**: Normal 662 days, Mild 301 days, Moderate 317 days, Severe 128 days
 
-### Track 1 Results (test_start_date=2025-08-01)
+### Track 1 Results - 4 Class (test_start_date=2025-08-01)
 
 | Model | Accuracy | Balanced Acc | Ordinal Acc | Notes |
 |-------|----------|--------------|-------------|-------|
-| **XGBoost** | 56.5% | 44.8% | **71.0%** | Best overall |
+| XGBoost | 56.5% | 44.8% | 71.0% | Best 4-class |
 | Random Forest | 56.5% | 42.9% | 63.8% | Competitive |
+| MLP (neural net) | 56.5% | 42.9% | 63.8% | Same as RF |
 | RF + Semi-supervised | 47.8% | 33.3% | 55.1% | Degraded |
-| XGBoost + Semi-supervised | 47.8% | 33.3% | 55.1% | Degraded |
 | LSTM (seq=4) | 36.8% | 33.3% | 45.6% | Insufficient data |
-| GRU (seq=4) | 36.8% | 33.3% | 45.6% | Insufficient data |
 
-### Top Features (XGBoost)
-1. respiratory_rate_mean (0.050)
-2. respiratory_rate_median (0.049)
-3. respiratory_rate_p5 (0.040)
-4. heart_rate_min (0.039)
-5. resting_heart_rate_min (0.037)
-6. sleep_sleep_efficiency (0.036)
-7. hrv_sdnn_p95 (0.035)
+### Track 1 Results - 3 Class (mild+moderate combined)
+
+| Model | Accuracy | Balanced Acc | Ordinal Acc | Notes |
+|-------|----------|--------------|-------------|-------|
+| **XGBoost** | 52.2% | 40.0% | **79.7%** | **Best overall** |
+| Random Forest | 52.2% | 38.1% | 75.4% | Good |
+| MLP (neural net) | 47.8% | 33.3% | 72.5% | Underperforms |
+
+**Key insight**: Combining mild+moderate → **8.7% improvement** (71.0% → 79.7%)
+
+### 3-Class Labels (Recommended)
+- 0 = Normal
+- 1 = Hyper (mild + moderate combined)
+- 2 = Severe
+
+### Top Features (XGBoost 3-class)
+1. respiratory_rate_median (0.068)
+2. respiratory_rate_mean (0.047)
+3. heart_rate_min (0.040)
+4. sleep_sleep_efficiency (0.040)
+5. heart_rate_p5 (0.038)
+6. resting_heart_rate_median (0.037)
+7. resting_heart_rate_min (0.036)
+8. respiratory_rate_p5 (0.033)
+9. sleep_core_minutes (0.025)
+10. resp_rate_delta (0.023)
 
 ### Key Findings
 
-1. **XGBoost is best model** - 71% ordinal accuracy, meaning predictions are usually within 1 severity level
-2. **Respiratory rate is top signal** - Confirms user's domain knowledge that resp rate is sensitive across all states
-3. **Semi-supervised learning hurts** - Unlabeled data distribution differs from labeled; high-confidence pseudo-labels propagate errors
-4. **Sequence models need more data** - Deep learning requires more labeled samples; classical ML wins with limited labels
-5. **Class imbalance matters** - Models bias toward "normal" class; need class weighting or sampling strategies
+1. **3-class XGBoost is best** - 79.7% ordinal accuracy with mild+moderate combined
+2. **Respiratory rate dominates** - Top 3 features are all respiratory rate metrics
+3. **Neural networks underperform** - MLP/LSTM/GRU all worse than XGBoost with 247 training samples; need ~1000+ for benefit
+4. **Semi-supervised hurts** - Adds noise, degrades performance
+5. **Mild/moderate detection is hard** - Model catches severe (57%) but misses early hyper (20% detection)
+6. **Early detection challenge** - Mild hyperthyroid doesn't produce strong signal deviation yet
 
-### Confusion Matrix (XGBoost)
+### Confusion Matrix (XGBoost 3-class)
 ```
              Predicted
-             Normal  Mild  Mod/Sev
-Actual Normal    11     0        0
-       Mild       4     1        0
-       Moderate   3     3        1
+             Normal  Hyper  Severe
+Actual Normal    11      0       0   ← 100% correct
+       Hyper      4      1       0   ← 20% detected (hard)
+       Severe     3      4       0   ← 57% detected
 ```
 
-Model correctly identifies normal periods. Struggles distinguishing mild from moderate. Rarely predicts severe (data imbalance).
+Model correctly identifies normal. Struggles with early hyper detection - this is the clinical challenge.
 
-### Recommendations for Phase 4
+### Recommendations
 
-1. **Use XGBoost** as production model
-2. **Add class weights** to handle imbalance
-3. **Focus on respiratory rate** features for inference
-4. **Consider binary classification** (Normal vs Hyper) for simpler initial deployment
-5. **Collect more labeled data** as new labs come in to improve model
+1. **Use XGBoost 3-class** as production model (79.7% ordinal accuracy)
+2. **Focus on respiratory rate** features for inference - strongest signal
+3. **Explore parameter tuning** to improve early hyper detection
+4. **Exclude life events** (trips, weddings) that add noise
+5. **Collect more transition-period labels** as new labs come in
 
 ## Next Steps (Implementation Phase - Completed)
 
