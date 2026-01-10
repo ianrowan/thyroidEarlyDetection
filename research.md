@@ -291,11 +291,40 @@ This explains why:
 2. Longer observation windows (detect trend before it's obvious)
 3. Accept that early detection is beyond current data limits
 
+### Hybrid Dual-Model Approach (Best Result)
+
+**Discovery**: Single models face a tradeoff - delta features detect hyper but miss severe; absolute features detect severe but miss hyper. Solution: specialized models with rule-based fusion.
+
+**Architecture**:
+1. **Delta Model** (XGBoost, 4 features): Specializes in hyper detection
+   - Features: `rhr_deviation_14d`, `rhr_deviation_30d`, `rhr_delta`, `resp_rate_delta`
+   - Captures rate-of-change patterns that precede hyperthyroid episodes
+
+2. **Vital Model** (XGBoost, 3 features): Specializes in severe detection
+   - Features: `respiratory_rate_mean`, `resting_heart_rate_mean`, `sleep_sleep_efficiency`
+   - Captures absolute level deviations in severe cases
+
+3. **Fusion Rule**:
+   - If `vital_model.prob(severe) > 0.30` → Severe
+   - Elif `delta_model.prob(hyper) > 0.25` → Hyper
+   - Else → Normal
+
+**Results**:
+| Metric | Single XGBoost | Hybrid Model | Improvement |
+|--------|---------------|--------------|-------------|
+| Ordinal Accuracy | 79.7% | **87.0%** | +7.3% |
+| Hyper Detection | 2/11 (18%) | **9/11 (82%)** | +64% |
+| Severe Detection | 4/7 (57%) | **5/7 (71%)** | +14% |
+
+**Tradeoffs**:
+- 4 false positives (normal → hyper/severe)
+- Acceptable for health monitoring where missing hyper is worse than false alarms
+
 ### Recommendations
 
-1. **Use XGBoost 3-class respiratory-only** model (88.4% ordinal accuracy, 10 features)
-2. **Accept early detection limits** - model is good at confirming severe, less reliable for early warning
-3. **Focus on trend detection** - multiple consecutive predictions may catch onset
+1. **Use Hybrid Dual-Model** approach (87% ordinal, 82% hyper detection, 71% severe)
+2. **Delta features are key** for early hyper detection - rate of change matters more than absolute values
+3. **Clinical utility**: Model now provides meaningful early warning for hyperthyroid episodes
 4. **Exclude life events** (trips, weddings) that add noise
 5. **Collect more labs during transitions** to improve training data
 

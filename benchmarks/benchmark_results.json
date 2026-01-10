@@ -1,11 +1,28 @@
 {
-  "generated_at": "2026-01-10T14:51:51.183546",
+  "generated_at": "2026-01-10T16:28:29.585512",
   "experiment_name": "thyroid_prediction",
   "best_model": {
-    "name": "XGBoost 3-class",
-    "ordinal_accuracy": 0.7971,
-    "balanced_accuracy": 0.4,
-    "run_id": "edeb18ea35924dfa8d6733fbcad4c8ca",
+    "name": "HybridDualModel 3-class",
+    "ordinal_accuracy": 0.8696,
+    "hyper_detection": "9/11 (82%)",
+    "severe_detection": "5/7 (71%)",
+    "architecture": {
+      "delta_model": [
+        "rhr_deviation_14d",
+        "rhr_deviation_30d",
+        "rhr_delta",
+        "resp_rate_delta"
+      ],
+      "vital_model": [
+        "respiratory_rate_mean",
+        "resting_heart_rate_mean",
+        "sleep_sleep_efficiency"
+      ],
+      "thresholds": {
+        "hyper": 0.25,
+        "severe": 0.3
+      }
+    },
     "classes": [
       "normal",
       "hyper (mild+moderate)",
@@ -13,6 +30,23 @@
     ]
   },
   "runs": [
+    {
+      "run_id": "hybrid_20260110_162829",
+      "params": {
+        "model": "hybrid_dual",
+        "n_features": 7,
+        "n_classes": "3",
+        "hyper_threshold": "0.25",
+        "severe_threshold": "0.30"
+      },
+      "metrics": {
+        "state_ordinal_accuracy": 0.8696,
+        "state_hyper_detection_rate": 0.8182,
+        "state_severe_detection_rate": 0.7143,
+        "state_normal_precision": 0.333,
+        "state_false_positive_rate": 0.8
+      }
+    },
     {
       "run_id": "aa75fcc092554a7491918575d938b6aa",
       "params": {

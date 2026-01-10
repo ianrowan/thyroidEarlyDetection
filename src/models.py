@@ -351,10 +351,116 @@ class MLPModel(BaseModel):
 
         return state_proba, trend_proba
 
+class HybridDualModel(BaseModel):
+    DELTA_FEATURES = ['rhr_deviation_14d', 'rhr_deviation_30d', 'rhr_delta', 'resp_rate_delta']
+    VITAL_FEATURES = ['respiratory_rate_mean', 'resting_heart_rate_mean', 'sleep_sleep_efficiency']
+
+    def __init__(self, params: Dict[str, Any] = None):
+        default_params = {
+            'hyper_threshold': 0.25,
+            'severe_threshold': 0.30,
+            'xgb_params': {
+                'max_depth': 3,
+                'learning_rate': 0.1,
+                'n_estimators': 100,
+                'random_state': 42,
+                'eval_metric': 'mlogloss'
+            }
+        }
+        if params:
+            if 'xgb_params' in params:
+                default_params['xgb_params'].update(params.pop('xgb_params'))
+            default_params.update(params)
+        super().__init__(default_params)
+        self.delta_model = None
+        self.vital_model = None
+        self.delta_indices = None
+        self.vital_indices = None
+        self.feature_names = None
+
+    def set_feature_names(self, feature_names: list):
+        self.feature_names = feature_names
+        self.delta_indices = [feature_names.index(f) for f in self.DELTA_FEATURES if f in feature_names]
+        self.vital_indices = [feature_names.index(f) for f in self.VITAL_FEATURES if f in feature_names]
+
+    def fit(self, X: np.ndarray, y_state: np.ndarray, y_trend: np.ndarray = None, feature_names: list = None):
+        if feature_names is not None:
+            self.set_feature_names(feature_names)
+
+        if self.delta_indices is None or self.vital_indices is None:
+            raise ValueError("Must call set_feature_names() or pass feature_names before fit()")
+
+        X_delta = np.nan_to_num(X[:, self.delta_indices], nan=0)
+        X_vital = np.nan_to_num(X[:, self.vital_indices], nan=0)
+
+        self.delta_model = xgb.XGBClassifier(**self.params['xgb_params'])
+        self.delta_model.fit(X_delta, y_state)
+
+        self.vital_model = xgb.XGBClassifier(**self.params['xgb_params'])
+        self.vital_model.fit(X_vital, y_state)
+
+        return self
+
+    def predict(self, X: np.ndarray) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+        X_delta = np.nan_to_num(X[:, self.delta_indices], nan=0)
+        X_vital = np.nan_to_num(X[:, self.vital_indices], nan=0)
+
+        delta_proba = self.delta_model.predict_proba(X_delta)
+        vital_proba = self.vital_model.predict_proba(X_vital)
+
+        predictions = np.zeros(len(X))
+
+        for i in range(len(X)):
+            severe_prob = vital_proba[i, 2] if vital_proba.shape[1] > 2 else 0
+            hyper_prob = delta_proba[i, 1] if delta_proba.shape[1] > 1 else 0
+
+            if severe_prob > self.params['severe_threshold']:
+                predictions[i] = 2
+            elif hyper_prob > self.params['hyper_threshold']:
+                predictions[i] = 1
+            else:
+                predictions[i] = 0
+
+        return predictions, None
+
+    def predict_proba(self, X: np.ndarray) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+        X_delta = np.nan_to_num(X[:, self.delta_indices], nan=0)
+        X_vital = np.nan_to_num(X[:, self.vital_indices], nan=0)
+
+        delta_proba = self.delta_model.predict_proba(X_delta)
+        vital_proba = self.vital_model.predict_proba(X_vital)
+
+        combined_proba = np.zeros((len(X), 3))
+
+        for i in range(len(X)):
+            severe_prob = vital_proba[i, 2] if vital_proba.shape[1] > 2 else 0
+            hyper_prob = delta_proba[i, 1] if delta_proba.shape[1] > 1 else 0
+            normal_prob = 1 - hyper_prob - severe_prob
+
+            combined_proba[i] = [max(0, normal_prob), hyper_prob, severe_prob]
+            combined_proba[i] /= combined_proba[i].sum()
+
+        return combined_proba, None
+
+    def get_feature_importance(self, feature_names: list = None) -> Dict[str, float]:
+        importance = {}
+
+        delta_names = [self.feature_names[i] for i in self.delta_indices]
+        for name, imp in zip(delta_names, self.delta_model.feature_importances_):
+            importance[f"delta:{name}"] = imp
+
+        vital_names = [self.feature_names[i] for i in self.vital_indices]
+        for name, imp in zip(vital_names, self.vital_model.feature_importances_):
+            importance[f"vital:{name}"] = imp
+
+        return dict(sorted(importance.items(), key=lambda x: x[1], reverse=True))
+
+
 MODEL_REGISTRY = {
     'random_forest': RandomForestModel,
     'xgboost': XGBoostModel,
     'mlp': MLPModel,
+    'hybrid': HybridDualModel,
 }
 
 def get_model(name: str, params: Dict[str, Any] = None) -> BaseModel:
