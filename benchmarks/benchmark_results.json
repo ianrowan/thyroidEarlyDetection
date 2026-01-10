@@ -1,13 +1,98 @@
 {
-  "generated_at": "2026-01-10T13:35:45.397184",
+  "generated_at": "2026-01-10T14:51:51.183546",
   "experiment_name": "thyroid_prediction",
   "best_model": {
-    "name": "XGBoost",
-    "ordinal_accuracy": 0.7101,
-    "balanced_accuracy": 0.4476,
-    "run_id": "91e604f319e947aca3eea0a64972e568"
+    "name": "XGBoost 3-class",
+    "ordinal_accuracy": 0.7971,
+    "balanced_accuracy": 0.4,
+    "run_id": "edeb18ea35924dfa8d6733fbcad4c8ca",
+    "classes": [
+      "normal",
+      "hyper (mild+moderate)",
+      "severe"
+    ]
   },
   "runs": [
+    {
+      "run_id": "aa75fcc092554a7491918575d938b6aa",
+      "params": {
+        "test_start_date": "2025-08-01",
+        "semi_supervised": "False",
+        "n_test": "23",
+        "n_features": "51",
+        "model": "mlp",
+        "n_train": "247",
+        "n_classes": "4"
+      },
+      "metrics": {
+        "state_f1_weighted": 0.4641,
+        "state_ordinal_accuracy": 0.6377,
+        "state_accuracy": 0.5652,
+        "state_balanced_accuracy": 0.4286,
+        "state_f1_macro": 0.3773
+      }
+    },
+    {
+      "run_id": "e714379b435943459373f70e7f71b9e3",
+      "params": {
+        "test_start_date": "2025-08-01",
+        "semi_supervised": "False",
+        "n_test": "23",
+        "n_features": "51",
+        "model": "mlp",
+        "n_train": "247",
+        "n_classes": "3"
+      },
+      "metrics": {
+        "state_f1_weighted": 0.3095,
+        "state_ordinal_accuracy": 0.7246,
+        "state_accuracy": 0.4783,
+        "state_balanced_accuracy": 0.3333,
+        "state_f1_macro": 0.2157
+      }
+    },
+    {
+      "run_id": "ef46001c553f456cbe750344da702eb6",
+      "params": {
+        "test_start_date": "2025-08-01",
+        "semi_supervised": "False",
+        "n_test": "23",
+        "n_features": "51",
+        "model": "random_forest",
+        "n_train": "247",
+        "n_classes": "3"
+      },
+      "metrics": {
+        "state_f1_weighted": 0.3949,
+        "trend_accuracy": 1.0,
+        "trend_f1_weighted": 1.0,
+        "state_ordinal_accuracy": 0.7536,
+        "state_accuracy": 0.5217,
+        "trend_f1_macro": 1.0,
+        "state_balanced_accuracy": 0.381,
+        "trend_balanced_accuracy": 1.0,
+        "state_f1_macro": 0.3056
+      }
+    },
+    {
+      "run_id": "edeb18ea35924dfa8d6733fbcad4c8ca",
+      "params": {
+        "test_start_date": "2025-08-01",
+        "semi_supervised": "False",
+        "n_test": "23",
+        "n_features": "51",
+        "model": "xgboost",
+        "n_train": "247",
+        "n_classes": "3"
+      },
+      "metrics": {
+        "state_f1_weighted": 0.4063,
+        "state_ordinal_accuracy": 0.7971,
+        "state_accuracy": 0.5217,
+        "state_balanced_accuracy": 0.4,
+        "state_f1_macro": 0.3195
+      }
+    },
     {
       "run_id": "22f1c9cc2fe14360b3c25bf60589ae56",
       "params": {

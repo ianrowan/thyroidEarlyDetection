@@ -6,8 +6,12 @@ from datetime import timedelta
 
 from .config import DataConfig, TrainConfig
 
-STATE_MAP = {'normal': 0, 'mild': 1, 'moderate': 2, 'severe': 3}
+STATE_MAP_4CLASS = {'normal': 0, 'mild': 1, 'moderate': 2, 'severe': 3}
+STATE_MAP_3CLASS = {'normal': 0, 'mild': 1, 'moderate': 1, 'severe': 2}
 TREND_MAP = {'improving': 0, 'stable': 1, 'worsening': 2}
+
+def get_state_map(n_classes: int = 4) -> dict:
+    return STATE_MAP_3CLASS if n_classes == 3 else STATE_MAP_4CLASS
 
 def load_features(config: DataConfig) -> pd.DataFrame:
     df = pd.read_parquet(config.features_path)
@@ -24,10 +28,12 @@ def load_labels(config: DataConfig) -> Optional[pd.DataFrame]:
     df['end_date'] = pd.to_datetime(df['end_date'], utc=True)
     return df
 
-def assign_labels_to_windows(features: pd.DataFrame, labels: pd.DataFrame) -> pd.DataFrame:
+def assign_labels_to_windows(features: pd.DataFrame, labels: pd.DataFrame, n_classes: int = 4) -> pd.DataFrame:
     features = features.copy()
     features['state'] = np.nan
     features['state_confidence'] = 0.0
+
+    state_map = get_state_map(n_classes)
 
     for _, label_row in labels.iterrows():
         mask = (
@@ -35,7 +41,7 @@ def assign_labels_to_windows(features: pd.DataFrame, labels: pd.DataFrame) -> pd
             (features['window_end'] <= label_row['end_date'])
         )
 
-        state_val = STATE_MAP.get(label_row['severity'].lower(), np.nan)
+        state_val = state_map.get(label_row['severity'].lower(), np.nan)
         confidence = label_row.get('confidence', 1.0)
 
         update_mask = mask & (features['state_confidence'] < confidence)
@@ -76,13 +82,14 @@ def get_feature_columns(df: pd.DataFrame, config: TrainConfig) -> List[str]:
 
 def prepare_dataset(
     config: DataConfig,
-    train_config: TrainConfig
+    train_config: TrainConfig,
+    n_classes: int = 4
 ) -> Tuple[pd.DataFrame, List[str]]:
     features = load_features(config)
     labels = load_labels(config)
 
     if labels is not None:
-        features = assign_labels_to_windows(features, labels)
+        features = assign_labels_to_windows(features, labels, n_classes=n_classes)
     else:
         features['state'] = np.nan
         features['trend'] = np.nan

@@ -58,6 +58,12 @@ Hardware Access
 - Access locally to a titan RTX with 24Gb vram
 - Open to using cloud services if necessary but only for vram or necessary speed up
 
+Post model training ideas:
+- p0:combine mild and moderate labels
+- p0: have we considered neural networks? provide reason why not or start implementation
+- p1: There are some periods here that are "life events" ie trips weddings etc. I think this data should be ignored as there are many extra factors about it. I can create a file noting the dates of all of these
+
+
 ## Always Rules 
 
 - Respond concisely: only relevant info, code, plans

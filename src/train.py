@@ -58,13 +58,14 @@ def run_experiment(
     model_params: Dict[str, Any] = None,
     test_start_date: str = '2025-08-01',
     semi_supervised: bool = False,
-    experiment_name: str = None
+    experiment_name: str = None,
+    n_classes: int = 4
 ):
     mlflow.set_tracking_uri(config.tracking_uri)
     mlflow.set_experiment(experiment_name or config.name)
 
-    print(f"Loading data...")
-    df, feature_cols = prepare_dataset(config.data, config.train)
+    print(f"Loading data... ({n_classes} classes)")
+    df, feature_cols = prepare_dataset(config.data, config.train, n_classes=n_classes)
 
     labeled_count = df['state'].notna().sum()
     print(f"Total windows: {len(df)}, Labeled: {labeled_count}, Features: {len(feature_cols)}")
@@ -79,11 +80,13 @@ def run_experiment(
 
     print(f"Train samples: {len(data['X_train'])}, Test samples: {len(data['X_test'])}")
 
-    with mlflow.start_run(run_name=f"{model_name}{'_semi' if semi_supervised else ''}"):
+    class_suffix = '_3class' if n_classes == 3 else ''
+    with mlflow.start_run(run_name=f"{model_name}{'_semi' if semi_supervised else ''}{class_suffix}"):
         mlflow.log_params({
             'model': model_name,
             'semi_supervised': semi_supervised,
             'test_start_date': test_start_date,
+            'n_classes': n_classes,
             'n_features': len(feature_cols),
             'n_train': len(data['X_train']),
             'n_test': len(data['X_test']),
@@ -198,6 +201,8 @@ def main():
     parser.add_argument('--semi-supervised', action='store_true')
     parser.add_argument('--test-start-date', type=str, default='2025-08-01')
     parser.add_argument('--experiment-name', type=str, default=None)
+    parser.add_argument('--n-classes', type=int, default=4, choices=[3, 4],
+                        help='3=combine mild+moderate, 4=all separate')
     args = parser.parse_args()
 
     config = ExperimentConfig()
@@ -210,7 +215,8 @@ def main():
             config=config,
             test_start_date=args.test_start_date,
             semi_supervised=args.semi_supervised,
-            experiment_name=args.experiment_name
+            experiment_name=args.experiment_name,
+            n_classes=args.n_classes
         )
 
     print("\n" + "="*60)
