@@ -209,16 +209,21 @@ Training data (temporal split)
 
 ### Current Phase Status
 - [x] Phase 1: Research - Complete (research.md)
-- [~] Phase 2: Implementation - Data pipeline done, awaiting labels
-- [ ] Phase 3: Experimentation - Ready to run when labels available
-- [ ] Phase 4: Productionization - After best model selected
+- [x] Phase 2: Implementation - Data pipeline and ML infrastructure complete
+- [x] Phase 3: Experimentation - XGBoost best (71% ordinal accuracy)
+- [ ] Phase 4: Productionization - Build inference pipeline
+
+### Best Model: XGBoost
+- Ordinal accuracy: 71% (predictions within 1 severity level)
+- Top features: respiratory_rate_mean, respiratory_rate_median, respiratory_rate_p5
+- View all results: `venv/bin/mlflow ui` or see research.md
 
 ## Requests of user
 
 *Use this section to request dataset, etc from the user, use it like a checklist and checkoff once you receive data*
 
 - [x] Apple Health export (full XML from iPhone Health app → Profile → Export All Health Data)
-- [ ] Labeling session: date ranges + severity (Normal/Mild/Moderate/Severe) for remembered hyperthyroid episodes
+- [x] Labeling session: date ranges + severity (Normal/Mild/Moderate/Severe) for remembered hyperthyroid episodes
 - [x] Lab results with dates (TSH, T3, T4 values for the 6 known lab draws)
 - [x] Medication history with dates (optional, for validation/context)
 

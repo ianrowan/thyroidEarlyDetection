@@ -111,7 +111,8 @@ class XGBoostModel(BaseModel):
 
         if y_trend is not None:
             valid_trend = y_trend >= 0
-            if valid_trend.sum() > 10:
+            n_classes = len(np.unique(y_trend[valid_trend]))
+            if valid_trend.sum() > 10 and n_classes > 1:
                 self.trend_model = xgb.XGBClassifier(**self.params)
                 self.trend_model.fit(X_processed[valid_trend], y_trend[valid_trend])
 

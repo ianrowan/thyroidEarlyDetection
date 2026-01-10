@@ -20,8 +20,8 @@ def load_labels(config: DataConfig) -> Optional[pd.DataFrame]:
         return None
 
     df = pd.read_csv(config.labels_path)
-    df['start_date'] = pd.to_datetime(df['start_date'])
-    df['end_date'] = pd.to_datetime(df['end_date'])
+    df['start_date'] = pd.to_datetime(df['start_date'], utc=True)
+    df['end_date'] = pd.to_datetime(df['end_date'], utc=True)
     return df
 
 def assign_labels_to_windows(features: pd.DataFrame, labels: pd.DataFrame) -> pd.DataFrame:

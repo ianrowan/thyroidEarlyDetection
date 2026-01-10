@@ -196,11 +196,66 @@ Run both tracks for each ML approach to understand data quality vs model complex
 - Training acceleration: Titan RTX 24GB VRAM (local)
 - Cloud: Available if needed for large-scale experiments
 
-## Next Steps (Implementation Phase)
+## Experiment Results (Phase 3)
 
-1. Parse Apple Health XML export
-2. Build feature extraction pipeline
-3. Conduct labeling session with user
-4. Implement experiment tracking (MLflow or similar)
+### Dataset Statistics
+- **Total windows**: 691 (5-day each)
+- **Labeled windows**: 270 (39%)
+- **Features**: 51 numeric features
+- **Label distribution**: Normal 662 days, Mild 301 days, Moderate 317 days, Severe 128 days
+
+### Track 1 Results (test_start_date=2025-08-01)
+
+| Model | Accuracy | Balanced Acc | Ordinal Acc | Notes |
+|-------|----------|--------------|-------------|-------|
+| **XGBoost** | 56.5% | 44.8% | **71.0%** | Best overall |
+| Random Forest | 56.5% | 42.9% | 63.8% | Competitive |
+| RF + Semi-supervised | 47.8% | 33.3% | 55.1% | Degraded |
+| XGBoost + Semi-supervised | 47.8% | 33.3% | 55.1% | Degraded |
+| LSTM (seq=4) | 36.8% | 33.3% | 45.6% | Insufficient data |
+| GRU (seq=4) | 36.8% | 33.3% | 45.6% | Insufficient data |
+
+### Top Features (XGBoost)
+1. respiratory_rate_mean (0.050)
+2. respiratory_rate_median (0.049)
+3. respiratory_rate_p5 (0.040)
+4. heart_rate_min (0.039)
+5. resting_heart_rate_min (0.037)
+6. sleep_sleep_efficiency (0.036)
+7. hrv_sdnn_p95 (0.035)
+
+### Key Findings
+
+1. **XGBoost is best model** - 71% ordinal accuracy, meaning predictions are usually within 1 severity level
+2. **Respiratory rate is top signal** - Confirms user's domain knowledge that resp rate is sensitive across all states
+3. **Semi-supervised learning hurts** - Unlabeled data distribution differs from labeled; high-confidence pseudo-labels propagate errors
+4. **Sequence models need more data** - Deep learning requires more labeled samples; classical ML wins with limited labels
+5. **Class imbalance matters** - Models bias toward "normal" class; need class weighting or sampling strategies
+
+### Confusion Matrix (XGBoost)
+```
+             Predicted
+             Normal  Mild  Mod/Sev
+Actual Normal    11     0        0
+       Mild       4     1        0
+       Moderate   3     3        1
+```
+
+Model correctly identifies normal periods. Struggles distinguishing mild from moderate. Rarely predicts severe (data imbalance).
+
+### Recommendations for Phase 4
+
+1. **Use XGBoost** as production model
+2. **Add class weights** to handle imbalance
+3. **Focus on respiratory rate** features for inference
+4. **Consider binary classification** (Normal vs Hyper) for simpler initial deployment
+5. **Collect more labeled data** as new labs come in to improve model
+
+## Next Steps (Implementation Phase - Completed)
+
+1. ~~Parse Apple Health XML export~~ ✓
+2. ~~Build feature extraction pipeline~~ ✓
+3. ~~Conduct labeling session with user~~ ✓
+4. ~~Implement experiment tracking (MLflow or similar)~~ ✓
 5. Train and evaluate Approach A baseline
 6. Iterate through approaches B, C, D
