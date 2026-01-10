@@ -1,0 +1,12 @@
+run_id,model,semi_supervised,sequence_length,test_start_date,n_train,n_test,state_accuracy,state_balanced_accuracy,state_ordinal_accuracy,state_f1_macro
+91e604f3,xgboost,False,N/A,2025-08-01,247,23,0.5652,0.4476,0.7101,0.4103
+b669ba5b,random_forest,False,N/A,2022-04-01,18,252,0.4365,0.25,0.6693,0.1519
+d450efc7,xgboost,False,N/A,2022-04-01,18,252,0.4365,0.25,0.6693,0.1519
+4969846a,random_forest,False,N/A,2025-08-01,247,23,0.5652,0.4286,0.6377,0.3773
+fa3f071b,xgboost,True,N/A,2025-08-01,247,23,0.4783,0.3333,0.5507,0.2157
+062cadb4,random_forest,True,N/A,2025-08-01,247,23,0.4783,0.3333,0.5507,0.2157
+ec54b5d3,gru,False,4,2025-08-01,247,19,0.3684,0.3333,0.4561,0.1795
+b45df141,lstm,False,4,2025-08-01,247,19,0.3684,0.3333,0.4561,0.1795
+22f1c9cc,lstm,False,6,2025-08-01,247,17,0.2941,0.3333,0.4314,0.1587
+6256437e,xgboost,True,N/A,2025-08-01,247,23,0.0,0.0,0.0,0.0
+f44ba070,xgboost,False,N/A,2025-08-01,247,23,0.0,0.0,0.0,0.0
