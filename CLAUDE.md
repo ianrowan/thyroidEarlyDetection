@@ -71,6 +71,7 @@ Post model training ideas:
 - Do not comment code
 - Flag strange patterns in data and add to request of user
 - Programming language: python
+- add new research and experiments to research.md
 
 ## Workflow preference
 

@@ -261,13 +261,43 @@ Actual Normal    11      0       0   ← 100% correct
 
 Model correctly identifies normal. Struggles with early hyper detection - this is the clinical challenge.
 
+### Hyperparameter Tuning Results
+
+| Feature Set | Features | Best Ordinal Acc | Best Params |
+|-------------|----------|------------------|-------------|
+| Respiratory only | 10 | **88.4%** | depth=5, lr=0.2, n_est=50 |
+| Top 20 | 20 | 88.4% | depth=5, lr=0.05, n_est=50 |
+| All features | 51 | 84.1% | depth=3, lr=0.05, n_est=50 |
+
+**Key insight**: Simpler models with fewer features perform better. Respiratory-only model (10 features) matches full model performance.
+
+### Signal Analysis - Why Early Detection is Hard
+
+| State | Resp Rate Mean | Std | Difference from Normal |
+|-------|----------------|-----|------------------------|
+| Normal | 15.91 | 0.33 | — |
+| Hyper (mild+mod) | 16.06 | 0.48 | +0.15 (within noise) |
+| Severe | 17.63 | 1.11 | +1.72 (detectable) |
+
+**Fundamental limitation**: The difference between Normal and Hyper is only 0.15 breaths/min - well within natural variance (std ~0.4). Severe is clearly distinguishable (+1.7 breaths/min).
+
+This explains why:
+- Severe detection works (57-71%)
+- Early/mild hyper detection fails (0-20%)
+- Class weighting doesn't help - signal isn't there
+
+**Implication**: Current wearable data can reliably detect moderate-to-severe hyperthyroid but not early onset. Need either:
+1. More sensitive signals (wearable improvements)
+2. Longer observation windows (detect trend before it's obvious)
+3. Accept that early detection is beyond current data limits
+
 ### Recommendations
 
-1. **Use XGBoost 3-class** as production model (79.7% ordinal accuracy)
-2. **Focus on respiratory rate** features for inference - strongest signal
-3. **Explore parameter tuning** to improve early hyper detection
+1. **Use XGBoost 3-class respiratory-only** model (88.4% ordinal accuracy, 10 features)
+2. **Accept early detection limits** - model is good at confirming severe, less reliable for early warning
+3. **Focus on trend detection** - multiple consecutive predictions may catch onset
 4. **Exclude life events** (trips, weddings) that add noise
-5. **Collect more transition-period labels** as new labs come in
+5. **Collect more labs during transitions** to improve training data
 
 ## Next Steps (Implementation Phase - Completed)
 
