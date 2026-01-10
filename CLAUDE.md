@@ -92,6 +92,10 @@ venv/bin/python -m src.train --model all  # run all baselines
 # With semi-supervised learning
 venv/bin/python -m src.train --model xgboost --semi-supervised
 
+# Sequence models (LSTM/GRU)
+venv/bin/python -m src.train_sequence --model lstm --seq-length 6
+venv/bin/python -m src.train_sequence --model gru --seq-length 6
+
 # View experiment results
 venv/bin/mlflow ui
 ```
