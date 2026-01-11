@@ -47,6 +47,12 @@ def save_production_models(n_classes: int = 3):
         'max': df['window_end'].max().isoformat()
     }
 
+    ios_model_path = MODELS_DIR / 'early_detection_ios.joblib'
+    joblib.dump(early_model.model, ios_model_path)
+    print(f"  iOS model (3 features) saved to {ios_model_path}")
+
+    ios_features = ['rhr_deviation_14d', 'rhr_deviation_30d', 'rhr_delta']
+
     metadata = {
         'training_date': datetime.now().isoformat(),
         'n_classes': n_classes,
@@ -57,6 +63,12 @@ def save_production_models(n_classes: int = 3):
         'hybrid_thresholds': {
             'hyper': hybrid_model.params['hyper_threshold'],
             'severe': hybrid_model.params['severe_threshold']
+        },
+        'ios_model': {
+            'file': 'early_detection_ios.joblib',
+            'features': ios_features,
+            'feature_order': 'Input array must be [rhr_deviation_14d, rhr_deviation_30d, rhr_delta]',
+            'threshold': early_model.params['threshold']
         }
     }
 

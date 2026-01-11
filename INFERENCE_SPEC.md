@@ -3,10 +3,11 @@
 ## Model Overview
 
 **Type**: XGBoost binary classifier
+**Model file**: `models/early_detection_ios.joblib`
 **Purpose**: Early detection of hyperthyroid onset (3-4 weeks advance warning)
 **Output**: Probability [0, 1] of hyper risk
 
-## Required Input Features
+## Required Input Features (3 total)
 
 | Feature | Description | Computation |
 |---------|-------------|-------------|
@@ -38,12 +39,20 @@ For each 5-day window:
    - rhr_delta = current_window_mean - prior_window_mean
 ```
 
-## Model Output
+## Model Input/Output
 
+```python
+import joblib
+
+model = joblib.load('models/early_detection_ios.joblib')
+
+features = [[rhr_deviation_14d, rhr_deviation_30d, rhr_delta]]
+
+probability = model.predict_proba(features)[0, 1]
 ```
-Input:  [rhr_deviation_14d, rhr_deviation_30d, rhr_delta]
-Output: probability (float, 0-1)
-```
+
+**Input**: Array shape (1, 3) with features in order: `[rhr_deviation_14d, rhr_deviation_30d, rhr_delta]`
+**Output**: Probability (float, 0-1) of hyper risk
 
 ## Alert Logic
 
@@ -67,12 +76,35 @@ elif probability >= 0.35:
     alert(level: "yellow", "Monitor closely")
 ```
 
+## Model Files
+
+| File | Input Shape | Description |
+|------|-------------|-------------|
+| `early_detection_ios.joblib` | (n, 3) | Standalone XGBoost for iOS - direct 3-feature input |
+| `early_detection.joblib` | (n, 51) | Full wrapper model used by CLI inference |
+
+**Use `early_detection_ios.joblib` for iOS integration.**
+
 ## Model Export
 
-The trained model can be exported as:
+The `early_detection_ios.joblib` model can be exported as:
 - **CoreML**: Use `coremltools` to convert from XGBoost
 - **ONNX**: Use `onnxmltools`
 - **Raw weights**: XGBoost JSON format, implement inference natively
+
+### CoreML Export Example
+```python
+import coremltools as ct
+import joblib
+
+model = joblib.load('models/early_detection_ios.joblib')
+coreml_model = ct.converters.xgboost.convert(
+    model,
+    feature_names=['rhr_deviation_14d', 'rhr_deviation_30d', 'rhr_delta'],
+    mode='classifier'
+)
+coreml_model.save('ThyroidEarlyDetection.mlmodel')
+```
 
 ## Example Values
 
