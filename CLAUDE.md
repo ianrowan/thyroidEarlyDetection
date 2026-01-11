@@ -107,6 +107,22 @@ venv/bin/python -m src.train_sequence --model gru --seq-length 6
 venv/bin/mlflow ui
 ```
 
+## Inference Commands
+
+```bash
+# One-time: train and save production models
+venv/bin/python -m src.save_models
+
+# Run inference on Apple Health export
+venv/bin/python -m src.infer --input data/apple_health_export/export.xml
+
+# Incremental: only show predictions from a specific date
+venv/bin/python -m src.infer --input export.xml --since 2025-12-01
+
+# Show more history in trajectory
+venv/bin/python -m src.infer --input export.xml --windows 10
+```
+
 ## Architecture
 
 ### Directory Structure
@@ -136,7 +152,9 @@ thyroid-ml/
 │   ├── models.py               # RandomForest, XGBoost, SemiSupervised
 │   ├── sequence_models.py      # LSTM/GRU PyTorch models
 │   ├── train.py                # Classical ML training with MLflow
-│   └── train_sequence.py       # Sequence model training
+│   ├── train_sequence.py       # Sequence model training
+│   ├── save_models.py          # Train and save production models
+│   └── infer.py                # CLI inference with dashboard output
 ├── outputs/
 │   └── labeling_viz.html       # Interactive chart for labeling
 ├── mlruns/                     # MLflow experiment tracking (gitignored)
@@ -218,12 +236,20 @@ Training data (temporal split)
 - [x] Phase 1: Research - Complete (research.md)
 - [x] Phase 2: Implementation - Data pipeline and ML infrastructure complete
 - [x] Phase 3: Experimentation - XGBoost best (71% ordinal accuracy)
-- [ ] Phase 4: Productionization - Build inference pipeline
+- [x] Phase 4: Productionization - Inference pipeline complete
 
-### Best Model: XGBoost
-- Ordinal accuracy: 71% (predictions within 1 severity level)
-- Top features: respiratory_rate_mean, respiratory_rate_median, respiratory_rate_p5
-- View all results: `venv/bin/mlflow ui` or see research.md
+### Production Models
+
+**EarlyDetectionModel** (Primary - Early Warning)
+- 100% hyper detection, flags 3-4 weeks before labeled onset
+- Uses RHR deviation features (14d, 30d, delta)
+- Default threshold: 0.35
+
+**HybridDualModel** (Secondary - Severity)
+- 87% ordinal accuracy
+- Distinguishes Normal/Hyper/Severe states
+
+View all experiment results: `venv/bin/mlflow ui` or see research.md
 
 ## Requests of user
 
