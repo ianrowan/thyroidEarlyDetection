@@ -209,24 +209,31 @@ def format_dashboard(
 def run_inference(
     input_path: Path,
     since_date: str = None,
-    n_windows: int = 5
+    n_windows: int = 5,
+    use_cached: bool = True
 ):
     early_model, hybrid_model, metadata = load_models()
     feature_cols = metadata['feature_columns']
 
-    parse_since = None
-    if since_date:
-        parse_since = pd.Timestamp(since_date, tz='UTC') - timedelta(days=30)
-        print(f"Processing data from {parse_since.date()} (30 days before {since_date})")
+    cached_dir = Path('data/processed')
+    if use_cached and cached_dir.exists() and any(cached_dir.glob('*.parquet')):
+        print("Loading cached parquet files...")
+        data = load_parquet_files(cached_dir)
+        print(f"Loaded {sum(len(df) for df in data.values()):,} records from cache")
+    else:
+        parse_since = None
+        if since_date:
+            parse_since = pd.Timestamp(since_date, tz='UTC') - timedelta(days=30)
+            print(f"Processing data from {parse_since.date()} (30 days before {since_date})")
 
-    print(f"Loading {input_path}...")
-    data = parse_export_since(input_path, parse_since)
+        print(f"Loading {input_path}...")
+        data = parse_export_since(input_path, parse_since)
 
-    if not data:
-        print("No relevant health data found in export.")
-        return
+        if not data:
+            print("No relevant health data found in export.")
+            return
 
-    print(f"Found {sum(len(df) for df in data.values()):,} records")
+        print(f"Found {sum(len(df) for df in data.values()):,} records")
 
     print("Extracting features...")
     features = get_features_for_inference(data, feature_cols)
@@ -256,12 +263,13 @@ def main():
     parser.add_argument('--input', type=Path, required=True, help='Path to Apple Health export.xml')
     parser.add_argument('--since', type=str, default=None, help='Only show predictions from this date (YYYY-MM-DD)')
     parser.add_argument('--windows', type=int, default=5, help='Number of windows to show in trajectory')
+    parser.add_argument('--fresh', action='store_true', help='Re-parse XML instead of using cached parquet')
     args = parser.parse_args()
 
     if not args.input.exists():
         raise FileNotFoundError(f"Input file not found: {args.input}")
 
-    run_inference(args.input, args.since, args.windows)
+    run_inference(args.input, args.since, args.windows, use_cached=not args.fresh)
 
 if __name__ == '__main__':
     main()
