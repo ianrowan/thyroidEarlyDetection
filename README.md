@@ -2,7 +2,7 @@
 
 A machine learning system that detects hyperthyroid episodes 3-4 weeks before lab confirmation using Apple Watch and Whoop data. Analyzes resting heart rate deviation patterns to provide early warning, enabling proactive medication adjustment between blood tests.
 
-If you are interested in the accompanied app the beta sign up is [here](https://tally.so/r/QKR9dA) with repo to follow
+If you are interested in the accompanied app the beta sign up is [here](https://pharoml.com) with repo to follow
 
 ## Overview
 
