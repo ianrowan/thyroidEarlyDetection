@@ -20,3 +20,11 @@ mlruns/
 # IDE
 .vscode/
 .idea/
+
+# iOS / Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+
+# macOS
+.DS_Store

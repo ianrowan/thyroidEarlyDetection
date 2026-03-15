@@ -8,6 +8,10 @@ def load_parquet_files(data_dir: Path) -> dict:
     data = {}
     for f in data_dir.glob('*.parquet'):
         name = f.stem
+        if name == 'hrv_sdnn' and (data_dir / 'hrv_unified.parquet').exists():
+            continue
+        if name == 'hrv_unified':
+            name = 'hrv_sdnn'
         df = pd.read_parquet(f)
         df['start_date'] = pd.to_datetime(df['start_date'], utc=True)
         data[name] = df

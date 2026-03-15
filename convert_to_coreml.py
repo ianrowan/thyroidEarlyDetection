@@ -12,7 +12,7 @@ coreml_model = ct.converters.xgboost.convert(
 )
 
 coreml_model.author = 'Thyroid Detection System'
-coreml_model.license = 'Personal Use'
+coreml_model.license = 'MIT'
 coreml_model.short_description = 'Early detection of hyperthyroid onset using RHR patterns'
 coreml_model.input_description['rhr_deviation_14d'] = 'RHR deviation from 14-day baseline (z-score)'
 coreml_model.input_description['rhr_deviation_30d'] = 'RHR deviation from 30-day baseline (z-score)'

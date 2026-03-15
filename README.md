@@ -138,15 +138,30 @@ The model detects when resting heart rate begins deviating from personal baselin
 - **Baseline dependency**: Requires stable "normal" periods to establish personal baselines
 - **Not a diagnostic tool**: Intended to prompt earlier lab testing, not replace medical evaluation
 
+## iOS App
+
+The `ios/` directory contains a SwiftUI app that runs the trained model on-device using CoreML. It reads resting heart rate from HealthKit and displays a daily risk score with trend charts.
+
+**To use the app with your own model:**
+
+```bash
+# Train your model
+python -m src.save_models
+
+# Convert to CoreML
+pip install coremltools
+python convert_to_coreml.py
+
+# Copy into the iOS app
+cp ThyroidEarlyDetection.mlmodel ios/ThyroidDetect/ThyroidDetect/ThyroidEarlyDetection.mlmodel
+```
+
+Then open `ios/ThyroidDetect/ThyroidDetect.xcodeproj` in Xcode, set your signing team, and build to your iPhone. See [ios/README.md](ios/README.md) for full setup instructions.
+
 ## Repository Structure
 
 ```
 thyroid-ml/
-├── data/
-│   ├── apple_health_export/    # Raw Apple Health XML (gitignored)
-│   ├── processed/              # Parsed parquet files (gitignored)
-│   ├── features.parquet        # 5-day window features
-│   └── labels.csv              # Episode labels
 ├── src/
 │   ├── parse_health_export.py  # Streaming XML parser
 │   ├── feature_extraction.py   # Window feature aggregation
@@ -156,6 +171,12 @@ thyroid-ml/
 │   ├── train.py                # Training with MLflow tracking
 │   ├── save_models.py          # Production model export
 │   └── infer.py                # CLI inference
+├── ios/                        # iOS app (SwiftUI + CoreML)
+│   ├── ThyroidDetect/          # Xcode project
+│   ├── docs/                   # iOS-specific documentation
+│   └── README.md               # iOS setup & model loading guide
+├── convert_to_coreml.py        # Export model to CoreML format
+├── data/                       # Health data & labels (gitignored)
 ├── models/                     # Saved model artifacts (gitignored)
 ├── mlruns/                     # MLflow experiments (gitignored)
 ├── research.md                 # Detailed research documentation

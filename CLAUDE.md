@@ -85,6 +85,9 @@ Post model training ideas:
 # Parse Apple Health export (run once after new export)
 venv/bin/python src/parse_health_export.py
 
+# Parse Whoop HRV and create unified HRV (SDNN + RMSSD z-score normalized)
+venv/bin/python src/parse_whoop_hrv.py --whoop-csv data/physiological_cycles.csv
+
 # Extract features into 5-day windows
 venv/bin/python src/feature_extraction.py
 
@@ -134,10 +137,12 @@ thyroid-ml/
 │   ├── processed/              # Parsed parquet files (gitignored)
 │   │   ├── resting_heart_rate.parquet
 │   │   ├── heart_rate.parquet
-│   │   ├── hrv_sdnn.parquet
+│   │   ├── hrv_sdnn.parquet           # Apple Health SDNN
+│   │   ├── hrv_unified.parquet        # Combined SDNN + RMSSD (z-scored)
 │   │   ├── respiratory_rate.parquet
 │   │   ├── sleep.parquet
 │   │   └── steps.parquet
+│   ├── physiological_cycles.csv  # Whoop export with HRV (RMSSD)
 │   ├── features.parquet        # 5-day window features (691 windows, 63 features)
 │   ├── labels.csv              # User-provided episode labels (TODO)
 │   ├── labels_template.csv     # Template for labeling format
@@ -145,6 +150,7 @@ thyroid-ml/
 │   └── medication_history.csv  # Medication dosage changes
 ├── src/
 │   ├── parse_health_export.py  # Streaming XML parser for Apple Health
+│   ├── parse_whoop_hrv.py      # Whoop CSV → unified HRV (z-score normalized)
 │   ├── feature_extraction.py   # 5-day window feature aggregation
 │   ├── visualize_for_labeling.py # Interactive Plotly visualization
 │   ├── config.py               # Dataclass configs for experiments
@@ -155,6 +161,11 @@ thyroid-ml/
 │   ├── train_sequence.py       # Sequence model training
 │   ├── save_models.py          # Train and save production models
 │   └── infer.py                # CLI inference with dashboard output
+├── ios/                        # iOS app (SwiftUI + CoreML)
+│   ├── ThyroidDetect/          # Xcode project
+│   ├── docs/                   # iOS-specific docs
+│   └── README.md               # iOS setup & model loading guide
+├── convert_to_coreml.py        # Export model to CoreML for iOS
 ├── outputs/
 │   └── labeling_viz.html       # Interactive chart for labeling
 ├── mlruns/                     # MLflow experiment tracking (gitignored)
@@ -188,9 +199,9 @@ Training data (temporal split)
 
 ### Key Data Characteristics
 - **Date range**: 2016-2026 (~9.5 years)
-- **Primary signals**: RHR (2881), respiratory rate (62604), sleep (59741), HRV (19235)
+- **Primary signals**: RHR (2881), respiratory rate (62604), sleep (59741), HRV (19431)
 - **Device transition**: Apple Watch → Whoop in July 2025
-- **HRV gap**: Whoop not writing HRV to Apple Health (ends Nov 2025)
+- **HRV unified**: Apple Health SDNN (2018-Nov 2025) + Whoop RMSSD (Jul 2025-Jan 2026), z-score normalized
 - **Lab results**: 5 from recent episode (Aug 2025 - Jan 2026), 1 from Oct 2022
 
 ### Feature Engineering (63 features per 5-day window)
@@ -261,4 +272,4 @@ View all experiment results: `venv/bin/mlflow ui` or see research.md
 - [x] Medication history with dates (optional, for validation/context)
 
 ### Data Flags
-- HRV data ends Nov 2025 - Whoop may not be writing HRV to Apple Health (verify or export from Whoop directly)
+- [x] ~~HRV data ends Nov 2025~~ - Resolved: Whoop RMSSD integrated via `physiological_cycles.csv`, z-score normalized with Apple SDNN

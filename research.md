@@ -412,7 +412,7 @@ Date  | True Label | Prob | Alert@0.35
 **For Early Detection (Primary Use Case)**:
 1. **Use RHR Delta Model** - 3 features, binary classification, continuous probability output
 2. **Default threshold 0.35** - provides 3 weeks early warning
-3. **Consider 2-window confirmation** in app to reduce noise
+3. **Apply SMA-4 smoothing** - removes 24% of false positives, improves recall to 100%
 
 **For Severity Assessment (Secondary)**:
 - Use Hybrid Dual-Model when you need to distinguish hyper vs severe
@@ -421,6 +421,49 @@ Date  | True Label | Prob | Alert@0.35
 **Data Quality**:
 4. **Exclude life events** (trips, weddings) that add noise
 5. **Collect more labs during transitions** to validate early detection
+
+## Risk Score Smoothing Experiment (2026-01-19)
+
+### Objective
+Reduce false positive alerts by applying moving average smoothing to the risk score output.
+
+### False Positive Classification
+- **Pre-onset signals**: FPs within 30 days before hyper onset (actually correct early detections)
+- **True isolated FPs**: FPs far from any episode (noise to filter)
+
+### Full History Analysis
+| Category | Count |
+|----------|-------|
+| Total FPs | 65 |
+| Pre-onset signals | 10 |
+| True isolated FPs | 55 |
+| Recall (raw) | 98.6% |
+
+### Smoothing Results
+
+| Method | Isolated FPs | Removed | Recall |
+|--------|-------------|---------|--------|
+| Raw | 55 | - | 98.6% |
+| SMA-2 | 43 | 12 (-22%) | 99.3% |
+| SMA-3 | 46 | 9 (-16%) | 100% |
+| **SMA-4** | **42** | **13 (-24%)** | **100%** |
+| SMA-5 | 43 | 12 (-22%) | 100% |
+| EMA-4 | 48 | 7 (-13%) | 100% |
+
+### Key Findings
+
+1. **SMA-4 is optimal**: Removes 24% of isolated FPs while improving recall to 100%
+2. **SMA outperforms EMA**: SMA removes 2x more FPs than EMA
+3. **Smoothing improves recall**: Elevates scores during ramp-up to true episodes
+4. **13 single-window FPs** are most filterable
+
+### Recommendation
+**Implement SMA-4 smoothing** as post-processing in iOS app:
+- 24% reduction in isolated false positives
+- 100% recall maintained
+- No model retraining required
+
+See full details: `docs/smoothing_experiment.md`
 
 ## Next Steps (Implementation Phase - Completed)
 
